@@ -7,7 +7,6 @@ const bodyParser = require( 'koa-bodyparser' )
 const cors = require( '@koa/cors' )
 const moment = require( 'moment' )
 const fs = require( 'fs' )
-const newDate = moment().format( 'YYYY-MM-DD HH:mm:ss' );
 /**
  * 执行命令
  * @param {String} script 需要执行的脚本
@@ -57,7 +56,7 @@ const buildProject = async projectPath => {
 * @param {String} content 需要推送的内容
 */
 const messagePush = content => {
-    clientList.forEach( sse => sse.send( `[${ newDate }] ${ content }</br>` ) )
+    clientList.forEach( sse => sse.send( `[${ moment().format( 'YYYY-MM-DD HH:mm:ss' ) }] ${ content }</br>` ) )
     // send 自定义事件写法
     // clientList.forEach(sse => sse.send({ data: content, event: 'push' }))
 }
