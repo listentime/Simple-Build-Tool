@@ -6,32 +6,52 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-
   <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.js"></script>
+  <style>
+    #app {
+      width: 1200px;
+      margin: 0 auto;
+      background-color: black;
+      padding: 20px;
+      color: aliceblue;
+      border-radius: 5px;
+    }
+  </style>
 </head>
 
 <body>
+  <!-- 输入项目的路径 -->
+  <input type="text" value="/Users/fic/Desktop/my-app" id="dirPath">
+  <button id="buildSubmit">构建</button>
   <div id="app">
-    <!-- 输入项目的路径 -->
-    <input type="text" value="/Users/fic/Desktop/my-app" id="dirPath">
-    <!-- 构建点击的按钮 -->
-    <button id="buildSubmit">构建</button>
     <!-- 输出内容的载体 -->
-    <pre><code id="app"></code></pre>
+    <div><code id="content" class="content"></code></div>
+    <div style="color:#f1ac0c;word-wrap:break-all;"><code id="warning"></code></div>
+    <div style="color:red;word-wrap:break-all;"><code id="error"></code></div>
   </div>
   <script>
     let buildSubmit = document.getElementById( 'buildSubmit' )
-    let app = document.getElementById( 'app' )
+    let app = document.getElementById( 'content' )
     let dirPath = document.getElementById( 'dirPath' )
+    let error = document.getElementById( 'error' )
+    let warning = document.getElementById( 'warning' )
+    let normal = document.getElementById( 'normal' )
+
     // 通过 new EventSource 开启 SSE
     const source = new EventSource( `http://127.0.0.1:3000/api/log/push` );
     // 监听 message 事件
     source.onmessage = event => {
-      // 挂到载体上面
       app.innerHTML += `${ event.data }</br>`
     }
+    source.addEventListener( 'warning', event => {
+      warning.innerHTML += `${ event.data }</br>`
+    }, false )
     source.addEventListener( 'stop', event => {
       app.innerHTML += `${ event.data }</br>`
+      source.close()
+    }, false )
+    source.addEventListener( 'error', event => {
+      error.innerHTML += `${ event.data }</br>`
       source.close()
     }, false )
     buildSubmit.onclick = () => {

@@ -14,27 +14,32 @@ const fs = require( 'fs' )
  * @returns 
  */
 const implementCommand = async ( script, callback ) => {
-    callback( script )
+    // callback( script )
+    callback( { status: 'building', content: script } )
     return new Promise( ( resolve, reject ) => {
         try {
             const sh = child_process.exec( script, ( error, stdout, stderr ) => {
                 // 这里的 stdout stderr 在执行之后才会触发
                 if ( error ) {
                     reject( error );
-                    callback( error )
+                    // callback( error )
+                    callback( { status: 'error', content: error } )
                 }
                 resolve()
             } );
             // 成功的推送
             sh.stdout.on( 'data', ( data ) => {
-                callback( data )
+                // callback( data )
+                callback( { status: 'success', content: data } )
             } )
             // 错误的推送
             sh.stderr.on( 'data', ( error ) => {
-                callback( error )
+                // callback( error )
+                callback( { status: 'warning', content: error } )
             } )
         } catch ( error ) {
-            callback( error )
+            // callback( error )
+            callback( { status: 'error', content: error } )
             reject()
         }
     } )
@@ -49,17 +54,21 @@ const buildProject = async projectPath => {
     // 执行 build 命令
     await implementCommand( `cd ${ projectPath } && npm run build`, messagePush )
     // 打包结束
-    messagePush('stop')
+    messagePush( { status: 'done', content: '打包完成' } )
 }
 
 /**
 * 消息推送
-* @param {String} content 需要推送的内容
+* @param {String}  需要推送的内容
 */
-const messagePush = content => {
-    if(content === 'stop'){
-        clientList.forEach(sse => sse.send({ data: '打包完成', event: 'stop' }))
-    }else{
+const messagePush = ( { status, content } ) => {
+    if ( status === 'done' ) {
+        clientList.forEach( sse => sse.send( { data: content, event: 'stop' } ) )
+    }else if(status === 'error'){
+        clientList.forEach( sse => sse.send( { data: content, event: 'error' } ) )
+    }else if(status === 'warning'){
+        clientList.forEach( sse => sse.send( { data: content, event: 'warning' } ) )
+    } else {
         clientList.forEach( sse => sse.send( `[${ moment().format( 'YYYY-MM-DD HH:mm:ss' ) }] ${ content }</br>` ) )
     }
     // send 自定义事件写法
@@ -79,15 +88,15 @@ const SSE_CONF = {
 }
 
 router.get( '/api/log/push', KoaSSEStream( SSE_CONF ), ctx => {
-    ctx.res.setHeader('Content-Type', 'text/event-stream')
-    ctx.res.setHeader('Cache-Control', 'no-cache')
+    ctx.res.setHeader( 'Content-Type', 'text/event-stream' )
+    ctx.res.setHeader( 'Cache-Control', 'no-cache' )
     // 每次连接会进行一个 push
     clientList.push( ctx.sse );
 } )
 
-router.get( "/",async ctx => {
+router.get( "/", async ctx => {
     ctx.res.setHeader( "Content-Type", "text/html;charset=utf-8" )
-    ctx.body = fs.readFileSync('./public/index.html')
+    ctx.body = fs.readFileSync( './public/index.html' )
 } )
 
 
