@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+  <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <!-- 输入项目的路径 -->
+    <input type="text" value="/Users/fic/Desktop/my-app" id="dirPath">
+    <!-- 构建点击的按钮 -->
+    <button id="buildSubmit">构建</button>
+    <!-- 输出内容的载体 -->
+    <pre><code id="app"></code></pre>
+  </div>
+  <script>
+    let buildSubmit = document.getElementById('buildSubmit')
+    let app = document.getElementById('app')
+    let dirPath = document.getElementById('dirPath')
+    // 通过 new EventSource 开启 SSE
+    const source = new EventSource( `http://127.0.0.1:3000/api/log/push` );
+    // 监听 message 事件
+    source.onmessage = event => {
+      // 挂到载体上面
+      app.innerHTML += `${ event.data } \n`
+    }
+    buildSubmit.onclick = () => {
+      // 构建之前清空载体
+      app.innerHTML = '';
+      const projectPath = dirPath.value;
+      // 做了个简单校验
+      if ( !projectPath ) return alert( '目标打包路径不能为空' );
+      // 发起请求
+      $.ajax( {
+        url: 'http://127.0.0.1:3000/api/project/build',
+        method: 'post',
+        data: {
+          projectPath // 项目路径
+        },
+        // 成功回调
+        success: res => {
+          alert( res.msg )
+        }
+      } )
+    }
+  </script>
+</body>
+
+</html>
