@@ -14,7 +14,6 @@ const fs = require( 'fs' )
  * @returns 
  */
 const implementCommand = async ( script, callback ) => {
-    // callback( script )
     callback( { status: 'building', content: script } )
     return new Promise( ( resolve, reject ) => {
         try {
@@ -22,23 +21,19 @@ const implementCommand = async ( script, callback ) => {
                 // 这里的 stdout stderr 在执行之后才会触发
                 if ( error ) {
                     reject( error );
-                    // callback( error )
                     callback( { status: 'error', content: error } )
                 }
                 resolve()
             } );
             // 成功的推送
             sh.stdout.on( 'data', ( data ) => {
-                // callback( data )
                 callback( { status: 'success', content: data } )
             } )
             // 错误的推送
             sh.stderr.on( 'data', ( error ) => {
-                // callback( error )
                 callback( { status: 'warning', content: error } )
             } )
         } catch ( error ) {
-            // callback( error )
             callback( { status: 'error', content: error } )
             reject()
         }
@@ -64,9 +59,9 @@ const buildProject = async projectPath => {
 const messagePush = ( { status, content } ) => {
     if ( status === 'done' ) {
         clientList.forEach( sse => sse.send( { data: content, event: 'stop' } ) )
-    }else if(status === 'error'){
+    } else if ( status === 'error' ) {
         clientList.forEach( sse => sse.send( { data: content, event: 'error' } ) )
-    }else if(status === 'warning'){
+    } else if ( status === 'warning' ) {
         clientList.forEach( sse => sse.send( { data: content, event: 'warning' } ) )
     } else {
         clientList.forEach( sse => sse.send( `[${ moment().format( 'YYYY-MM-DD HH:mm:ss' ) }] ${ content }</br>` ) )

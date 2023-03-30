@@ -10,6 +10,8 @@
   <style>
     #app {
       width: 1200px;
+      height: 800px;
+      overflow: scroll;
       margin: 0 auto;
       background-color: black;
       padding: 20px;
@@ -35,7 +37,6 @@
     let dirPath = document.getElementById( 'dirPath' )
     let error = document.getElementById( 'error' )
     let warning = document.getElementById( 'warning' )
-    let normal = document.getElementById( 'normal' )
 
     // 通过 new EventSource 开启 SSE
     const source = new EventSource( `http://127.0.0.1:3000/api/log/push` );
@@ -44,22 +45,27 @@
       app.innerHTML += `${ event.data }</br>`
     }
     source.addEventListener( 'warning', event => {
-      warning.innerHTML += `${ event.data }</br>`
+      warning.innerHTML += `⚠️:${ event.data }</br>`
     }, false )
     source.addEventListener( 'stop', event => {
       app.innerHTML += `${ event.data }</br>`
       source.close()
     }, false )
     source.addEventListener( 'error', event => {
-      error.innerHTML += `${ event.data }</br>`
+      error.innerHTML += `🙅:${ event.data }</br>`
       source.close()
     }, false )
     buildSubmit.onclick = () => {
       // 构建之前清空载体
       app.innerHTML = '';
+      error.innerHTML = '';
+      warning.innerHTML = '';
       const projectPath = dirPath.value;
       // 做了个简单校验
-      if ( !projectPath ) return alert( '目标打包路径不能为空' );
+      if ( !projectPath ) {
+        error.innerHTML += '🙅:目标打包路径不能为空</br>'
+        return
+      }
       // 发起请求
       $.ajax( {
         url: 'http://127.0.0.1:3000/api/project/build',
@@ -69,7 +75,7 @@
         },
         // 成功回调
         success: res => {
-          alert( res.msg )
+          app.innerHTML += `${ res.msg }</br>`
         }
       } )
     }
