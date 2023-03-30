@@ -48,7 +48,8 @@ const buildProject = async projectPath => {
     await implementCommand( `cd ${ projectPath } && yarn install`, messagePush )
     // 执行 build 命令
     await implementCommand( `cd ${ projectPath } && npm run build`, messagePush )
-    messagePush( '打包完成！！！' )
+    // 打包结束
+    messagePush('stop')
 }
 
 /**
@@ -56,7 +57,11 @@ const buildProject = async projectPath => {
 * @param {String} content 需要推送的内容
 */
 const messagePush = content => {
-    clientList.forEach( sse => sse.send( `[${ moment().format( 'YYYY-MM-DD HH:mm:ss' ) }] ${ content }</br>` ) )
+    if(content === 'stop'){
+        clientList.forEach(sse => sse.send({ data: '打包完成', event: 'stop' }))
+    }else{
+        clientList.forEach( sse => sse.send( `[${ moment().format( 'YYYY-MM-DD HH:mm:ss' ) }] ${ content }</br>` ) )
+    }
     // send 自定义事件写法
     // clientList.forEach(sse => sse.send({ data: content, event: 'push' }))
 }

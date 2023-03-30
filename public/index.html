@@ -20,16 +20,20 @@
     <pre><code id="app"></code></pre>
   </div>
   <script>
-    let buildSubmit = document.getElementById('buildSubmit')
-    let app = document.getElementById('app')
-    let dirPath = document.getElementById('dirPath')
+    let buildSubmit = document.getElementById( 'buildSubmit' )
+    let app = document.getElementById( 'app' )
+    let dirPath = document.getElementById( 'dirPath' )
     // 通过 new EventSource 开启 SSE
     const source = new EventSource( `http://127.0.0.1:3000/api/log/push` );
     // 监听 message 事件
     source.onmessage = event => {
       // 挂到载体上面
-      app.innerHTML += `${ event.data } \n`
+      app.innerHTML += `${ event.data }</br>`
     }
+    source.addEventListener( 'stop', event => {
+      app.innerHTML += `${ event.data }</br>`
+      source.close()
+    }, false )
     buildSubmit.onclick = () => {
       // 构建之前清空载体
       app.innerHTML = '';
