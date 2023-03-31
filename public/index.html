@@ -1,86 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple-BT</title>
-  <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.js"></script>
-  <style>
-    #app {
-      width: 1200px;
-      height: 800px;
-      overflow: scroll;
-      margin: 0 auto;
-      background-color: black;
-      padding: 20px;
-      color: aliceblue;
-      border-radius: 5px;
-    }
-  </style>
-</head>
-
-<body>
-  <!-- 输入项目的路径 -->
-  <input type="text" value="/Users/fic/Desktop/my-app" id="dirPath">
-  <button id="buildSubmit">构建</button>
-  <div id="app">
-    <!-- 输出内容的载体 -->
-    <div><code id="content" class="content"></code></div>
-    <div style="color:#f1ac0c;word-wrap:break-all;"><code id="warning"></code></div>
-    <div style="color:red;word-wrap:break-all;"><code id="error"></code></div>
-  </div>
-  <script>
-
-    let buildSubmit = document.getElementById( 'buildSubmit' )
-    let app = document.getElementById( 'content' )
-    let dirPath = document.getElementById( 'dirPath' )
-    let error = document.getElementById( 'error' )
-    let warning = document.getElementById( 'warning' )
-
-    // 通过 new EventSource 开启 SSE
-    const source = new EventSource( `http://127.0.0.1:3001/api/log/push` );
-    // 监听 message 事件
-    source.onmessage = event => {
-      app.innerHTML += `${ event.data }</br>`
-    }
-    source.addEventListener( 'warning', event => {
-      warning.innerHTML += `⚠️:${ event.data }</br>`
-    }, false )
-    source.addEventListener( 'stop', event => {
-      app.innerHTML += `${ event.data }</br>`
-      source.close()
-    }, false )
-    source.addEventListener( 'error', event => {
-      error.innerHTML += `🙅:${ event.data }</br>`
-      source.close()
-    }, false )
-    buildSubmit.onclick = () => {
-      // 构建之前清空载体
-      app.innerHTML = '';
-      error.innerHTML = '';
-      warning.innerHTML = '';
-      const projectPath = dirPath.value;
-      // 做了个简单校验
-      if ( !projectPath ) {
-        error.innerHTML += '🙅:目标打包路径不能为空</br>'
-        return
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple-BT</title>
+    <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.js"></script>
+    <style>
+      .container {
+        display: flex;
       }
-      // 发起请求
-      $.ajax( {
-        url: 'http://127.0.0.1:3001/api/project/build',
-        method: 'post',
-        data: {
-          projectPath // 项目路径
-        },
-        // 成功回调
-        success: res => {
-          app.innerHTML += `${ res.msg }</br>`
-        }
-      } )
-    }
-  </script>
-</body>
+      #app {
+        flex: 5;
+        height: 800px;
+        overflow: scroll;
+        margin: 0 auto;
+        background-color: black;
+        padding: 20px;
+        color: aliceblue;
+        border-radius: 5px;
+      }
+      #listWrapper {
+        flex: 5;
+        border: 1px dashed #ccc;
+        padding: 10px 0;
+        height: 800px;
+        overflow-y: auto;
+      }
+      #listWrapper .list-item {
+        padding: 10px 20px;
+        border-bottom: 1px dashed #ccc;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+      }
+    </style>
+  </head>
 
+  <body>
+    <!-- 输入项目的路径
+    <input type="text" value="C:\Users\77964\Desktop\test-demo" id="dirPath" />
+    <button id="buildSubmit">构建</button>
+    <br />
+
+    <input type="text" value="" id="synchDirPath" />
+    <button id="synchBtn">同步列表按钮</button>
+    <br />
+
+    <input type="text" value="" id="refreshDirPath" />
+    <button id="refreshBtn">刷新列表按钮</button>
+    <br />
+    <input type="text" value="" id="delDirPath" />
+    <button id="removeBtn">删除按钮</button>
+    <br /> -->
+    <div class="container">
+      <div id="app">
+        <!-- 输出内容的载体 -->
+        <div><code id="content" class="content"></code></div>
+        <div style="color: #f1ac0c; word-wrap: break-all"><code id="warning"></code></div>
+        <div style="color: red; word-wrap: break-all"><code id="error"></code></div>
+      </div>
+      <div id="listWrapper"></div>
+    </div>
+
+    <script>
+      let app = document.getElementById('content')
+      let dirPath = document.getElementById('dirPath')
+      let error = document.getElementById('error')
+      let warning = document.getElementById('warning')
+
+      let githubUserName = ''
+      let githubList = []
+
+      // 通过 new EventSource 开启 SSE
+      const source = new EventSource(`http://127.0.0.1:3001/api/log/push`)
+      // 监听 message 事件
+      source.onmessage = event => {
+        app.innerHTML += `${event.data}</br>`
+      }
+      source.addEventListener(
+        'warning',
+        event => {
+          warning.innerHTML += `⚠️:${event.data}</br>`
+        },
+        false
+      )
+      source.addEventListener(
+        'stop',
+        event => {
+          app.innerHTML += `${event.data}</br>`
+          source.close()
+        },
+        false
+      )
+      source.addEventListener(
+        'error',
+        event => {
+          error.innerHTML += `🙅:${event.data}</br>`
+          source.close()
+        },
+        false
+      )
+      // removeBtn.onclick = () => {
+      //   $.ajax({
+      //     url: 'http://localhost:3001/api/project/removeAll',
+      //     method: 'delete',
+      //     data: {
+      //       projectPath: delDirPath.value
+      //     },
+      //     // 成功回调
+      //     success: res => {
+      //       console.info('删除成功')
+      //     }
+      //   })
+      // }
+
+      function bootstrap() {
+        const result = prompt('请输入您的github用户名称', 'PeopleWhoListenToStories')
+        if (result) {
+          githubUserName = result
+          fetchGitHubProjectList(githubUserName)
+        }
+      }
+
+      function fetchGitHubProjectList(user_name) {
+        $.ajax({
+          url: `http://localhost:3001/api/project/list?user_name=${user_name}`,
+          method: 'get',
+          // 成功回调
+          success: res => {
+            console.log(res)
+            if (res.code === 200) {
+              githubList = (res.data && res.data.list) || []
+              initRenderList()
+            } else {
+              githubList = []
+            }
+          }
+        })
+      }
+
+      function initRenderList() {
+        listWrapper.innerHTML = githubList
+          .map((item, index) => {
+            return `<div class="list-item">
+                  <div>
+                    <img src="${item.avatar_url}" style="width:100px;height:100px" />
+                  </div>
+                  <div>
+                    <span>项目名称: ${item.name}</span></br>
+                    <span>全部名称: ${item.full_name}</span></br>
+                    <span>描述: ${item.description}</span></br>
+                    <input class="custom-input" style="width:300px" />
+                    <button class="buildSubmit" custom-name="${item.name}" custom-clone_url="${item.clone_url}" custom-index="${index}">构建</button>
+                  </div>
+                  <div>
+                  </div>
+                  </div>`
+          })
+          .join('') || '暂无数据'
+        const buildSubmit = [...document.querySelectorAll('.buildSubmit')]
+        const inputList = [...document.querySelectorAll('.custom-input')]
+
+        buildSubmit.forEach(item => {
+          item.onclick = e => {
+            const name = e.target.getAttribute('custom-name') || ''
+            const clone_url = e.target.getAttribute('custom-clone_url') || ''
+            const inputIndex = e.target.getAttribute('custom-index')
+            const projectPath = inputList[inputIndex].value || ''
+            // 构建之前清空载体
+            app.innerHTML = ''
+            error.innerHTML = ''
+            warning.innerHTML = ''
+            // 做了个简单校验
+            if (!projectPath) {
+              error.innerHTML += '🙅:目标打包路径不能为空</br>'
+              return
+            }
+            // 发起请求
+            $.ajax({
+              url: 'http://127.0.0.1:3001/api/project/build',
+              method: 'post',
+              data: {
+                name,
+                projectPath, // 项目路径
+                clone_url // clone路径
+              },
+              // 成功回调
+              success: res => {
+                app.innerHTML += `${res.msg}</br>`
+              }
+            })
+          }
+        })
+      }
+
+      bootstrap()
+    </script>
+  </body>
 </html>
