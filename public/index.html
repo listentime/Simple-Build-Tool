@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Simple-BT</title>
   <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.js"></script>
   <style>
     #app {
@@ -32,6 +32,12 @@
     <div style="color:red;word-wrap:break-all;"><code id="error"></code></div>
   </div>
   <script>
+    const user = 'listentime' // github 用户名
+    const data =  fetch( `https://api.github.com/users/${ user }/repos` )
+    const urls =  data.json()
+
+
+
     let buildSubmit = document.getElementById( 'buildSubmit' )
     let app = document.getElementById( 'content' )
     let dirPath = document.getElementById( 'dirPath' )

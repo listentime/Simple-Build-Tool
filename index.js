@@ -120,5 +120,5 @@ router.post( '/api/project/build', ctx => {
 app.use( router.routes() )
 app.listen( 3001, () => {
     open('http://localhost:3001')
-    console.log( 'http:localhost:3000 服务启动' )
+    console.log( 'http:localhost:3001 服务启动' )
 } )
