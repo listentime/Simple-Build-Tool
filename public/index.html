@@ -39,7 +39,7 @@
     let warning = document.getElementById( 'warning' )
 
     // 通过 new EventSource 开启 SSE
-    const source = new EventSource( `http://127.0.0.1:3000/api/log/push` );
+    const source = new EventSource( `http://127.0.0.1:3001/api/log/push` );
     // 监听 message 事件
     source.onmessage = event => {
       app.innerHTML += `${ event.data }</br>`
@@ -68,7 +68,7 @@
       }
       // 发起请求
       $.ajax( {
-        url: 'http://127.0.0.1:3000/api/project/build',
+        url: 'http://127.0.0.1:3001/api/project/build',
         method: 'post',
         data: {
           projectPath // 项目路径

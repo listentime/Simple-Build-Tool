@@ -7,6 +7,7 @@ const bodyParser = require( 'koa-bodyparser' )
 const cors = require( '@koa/cors' )
 const moment = require( 'moment' )
 const fs = require( 'fs' )
+const open = require('opn')
 /**
  * 执行命令
  * @param {String} script 需要执行的脚本
@@ -33,6 +34,9 @@ const implementCommand = async ( script, callback ) => {
             sh.stderr.on( 'data', ( error ) => {
                 callback( { status: 'warning', content: error } )
             } )
+            sh.on('exit',code=>{
+                console.log('关闭进程',code)
+            })
         } catch ( error ) {
             callback( { status: 'error', content: error } )
             reject()
@@ -114,6 +118,7 @@ router.post( '/api/project/build', ctx => {
 } )
 
 app.use( router.routes() )
-app.listen( 3000, () => {
+app.listen( 3001, () => {
+    open('http://localhost:3001')
     console.log( 'http:localhost:3000 服务启动' )
 } )
